@@ -188,11 +188,11 @@ input{font-family:inherit}
          ".read": true, ".write": true } } } } }
    ===================================================================== */
 const FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  databaseURL: "",
-  projectId: "",
-  appId: ""
+  apiKey: "AIzaSyD_ZvOsf7dZLeY7ls9cSh-xtQlcvsaKyrY",
+  authDomain: "trivial-almacenaje.firebaseapp.com",
+  databaseURL: "https://trivial-almacenaje-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "trivial-almacenaje",
+  appId: "1:5282622826:web:c612f663b87fd3d8110913"
 };
 
 /* =====================================================================
@@ -318,7 +318,9 @@ const T = (() => {
         try {
           await cargar("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
           await cargar("https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js");
+          await cargar("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js");
           firebase.initializeApp(FIREBASE_CONFIG);
+          await firebase.auth().signInAnonymously();
           db = firebase.database();
           db.ref(".info/serverTimeOffset").on("value", s => { offset = s.val() || 0; });
           modo = "firebase";
