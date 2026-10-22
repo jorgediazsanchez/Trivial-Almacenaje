@@ -1,0 +1,1202 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Trivial del Almacén</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --fondo1:#1b1446; --fondo2:#2c1a72; --panel:rgba(255,255,255,.08); --panel2:rgba(255,255,255,.14);
+  --texto:#fff; --suave:rgba(255,255,255,.72);
+  --rojo:#e8384f; --azul:#2d7ff9; --amarillo:#f5b700; --verde:#1fb45a;
+  --rosa:#ff4fa3; --naranja:#ff8a1f; --morado:#8b5cf6; --cian:#14c4d6;
+  --radio:22px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Fredoka',system-ui,sans-serif;color:var(--texto);
+  background:radial-gradient(1200px 700px at 15% 0%,#4b2bb3 0%,transparent 60%),
+             radial-gradient(900px 600px at 100% 100%,#c2187a55 0%,transparent 60%),
+             linear-gradient(160deg,var(--fondo1),var(--fondo2));
+  background-attachment:fixed;min-height:100vh;overflow-x:hidden;
+}
+button{font-family:inherit;cursor:pointer;border:0}
+input{font-family:inherit}
+.oculto{display:none!important}
+#app{min-height:100vh}
+
+/* ---------- elementos comunes ---------- */
+.marca{display:flex;align-items:center;gap:14px}
+.marca h1{font-size:clamp(28px,4vw,56px);font-weight:700;letter-spacing:.5px;line-height:1}
+.marca small{display:block;font-size:clamp(14px,1.4vw,20px);color:var(--suave);font-weight:500;margin-top:4px}
+.btn{
+  background:#fff;color:#2a1a6e;font-weight:700;font-size:clamp(18px,1.8vw,26px);
+  padding:16px 34px;border-radius:999px;box-shadow:0 6px 0 #00000040;transition:transform .08s;
+}
+.btn:active{transform:translateY(3px);box-shadow:0 3px 0 #00000040}
+.btn.color{background:var(--amarillo);color:#2a1a6e}
+.btn.secundario{background:var(--panel2);color:#fff;box-shadow:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.panel{background:var(--panel);border:1px solid rgba(255,255,255,.12);border-radius:var(--radio);padding:24px}
+.aviso{background:#ffcf3a;color:#2a1a6e;border-radius:14px;padding:10px 16px;font-weight:600;font-size:15px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;font-weight:600;
+  font-size:clamp(16px,1.5vw,22px);color:#fff;animation:entra .35s ease-out}
+.chip .x{background:#0003;color:#fff;border-radius:50%;width:24px;height:24px;font-size:14px;line-height:24px;text-align:center}
+@keyframes entra{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes pop{0%{transform:scale(.2) rotate(-30deg);opacity:0}70%{transform:scale(1.15) rotate(6deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes latido{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* ---------- PANTALLA (profesor) ---------- */
+.pantalla{min-height:100vh;display:flex;flex-direction:column;padding:28px clamp(20px,3vw,48px);gap:24px}
+.barra{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.barra .derecha{display:flex;gap:10px;align-items:center}
+.etiqueta{background:var(--panel2);border-radius:999px;padding:8px 18px;font-weight:600;font-size:clamp(15px,1.4vw,20px)}
+.centro{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;text-align:center}
+
+.inicio-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:24px;width:100%;max-width:1200px;text-align:left}
+.lista-niveles{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.fila-nivel{display:flex;align-items:center;gap:14px;background:var(--panel);border-radius:16px;padding:12px 16px;font-size:20px}
+.fila-nivel .num{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;flex:none}
+.fila-nivel .n{color:var(--suave);margin-left:auto;font-size:16px;white-space:nowrap}
+.campo{display:flex;flex-direction:column;gap:6px;margin-top:16px}
+.tema-abierto{margin-top:16px;border:2px solid var(--c);border-radius:18px;padding:12px;background:#ffffff0d;background:color-mix(in srgb,var(--c) 14%,transparent)}
+.tema-cab{display:flex;align-items:center;gap:12px;font-size:22px;font-weight:700}
+.tema-cab .num{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;flex:none}
+.tema-abierto .lista-niveles{margin-top:10px}
+.fila-nivel.bloque{cursor:pointer;font-size:18px;padding:10px 14px}
+.fila-nivel.bloque input{width:22px;height:22px;accent-color:#ffcf3a;flex:none}
+.fila-nivel.bloque:has(input:not(:checked)){opacity:.5}
+.temas-cerrados{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:16px}
+.tema-cerrado{display:flex;align-items:center;gap:8px;background:#ffffff10;border:1px dashed #ffffff33;color:#ffffff70;border-radius:14px;padding:12px 14px;font-weight:600;font-size:17px;filter:grayscale(1)}
+.tema-cerrado .candado{font-size:20px}
+.campo label{color:var(--suave);font-size:16px}
+.campo input{font-size:22px;padding:10px 14px;border-radius:12px;border:2px solid rgba(255,255,255,.2);background:#0002;color:#fff;width:140px}
+
+.lobby{display:grid;grid-template-columns:auto 1fr;gap:36px;width:100%;max-width:1400px;align-items:start}
+.qr-caja{background:#fff;border-radius:28px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:12px;color:#2a1a6e}
+.qr-caja #qr{width:min(34vw,360px);height:min(34vw,360px)}
+.qr-caja #qr img,.qr-caja #qr canvas{width:100%!important;height:100%!important}
+.codigo{font-size:clamp(40px,5vw,72px);font-weight:700;letter-spacing:10px;line-height:1}
+.url{font-size:14px;word-break:break-all;max-width:360px;text-align:center;color:#5b4ca8}
+.jugadores{display:flex;flex-wrap:wrap;gap:12px;align-content:flex-start;min-height:120px}
+.contador{font-size:clamp(22px,2.4vw,34px);font-weight:600}
+
+.intro-nivel .quesito-grande{width:min(36vh,300px);height:min(36vh,300px);animation:pop .7s ease-out}
+.intro-nivel h2{font-size:clamp(36px,5vw,76px);line-height:1.05}
+.intro-nivel p{font-size:clamp(20px,2vw,30px);color:var(--suave)}
+
+.pregunta-txt{font-size:clamp(28px,3.6vw,58px);font-weight:600;line-height:1.15;max-width:1300px;
+  background:#fff;color:#22155d;border-radius:28px;padding:28px 36px;box-shadow:0 10px 0 #0003}
+.zona-tiempo{display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap}
+.reloj{position:relative;width:clamp(110px,11vw,160px);height:clamp(110px,11vw,160px)}
+.reloj svg{width:100%;height:100%;transform:rotate(-90deg)}
+.reloj .num{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(40px,4.4vw,64px);font-weight:700}
+.reloj.urgente .num{color:#ffcf3a;animation:latido .5s infinite}
+.respondidas{font-size:clamp(20px,2vw,30px);font-weight:600;background:var(--panel2);border-radius:20px;padding:14px 24px}
+.respondidas b{font-size:1.5em}
+.opciones{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:100%;max-width:1400px}
+.opcion{display:flex;align-items:center;gap:18px;border-radius:20px;padding:22px 26px;text-align:left;
+  font-size:clamp(20px,2.3vw,36px);font-weight:600;color:#fff;position:relative;overflow:hidden;box-shadow:0 6px 0 #0003;min-height:96px}
+.opcion .forma{font-size:1.1em;flex:none;width:1.4em;text-align:center}
+.opcion .barra-votos{position:absolute;left:0;bottom:0;height:8px;background:#fff9;transition:width .8s}
+.opcion .votos{margin-left:auto;font-size:.85em;background:#0003;border-radius:12px;padding:4px 14px;flex:none}
+.opcion.apagada{opacity:.3;filter:saturate(.4)}
+.opcion.correcta{outline:6px solid #fff;animation:latido 1s 2}
+.o0{background:var(--rojo)}.o1{background:var(--azul)}.o2{background:var(--amarillo)}.o3{background:var(--verde)}
+
+.resultado-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:28px;width:100%;max-width:1500px;align-items:start}
+.resultado-grid .opciones{grid-template-columns:1fr}
+.resultado-grid .opcion{min-height:70px;padding:16px 22px;font-size:clamp(18px,1.8vw,28px)}
+.tabla-top h3{font-size:24px;margin-bottom:12px;text-align:left}
+.fila-rank{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:14px;padding:10px 14px;margin-bottom:8px;font-size:clamp(17px,1.6vw,24px);text-align:left}
+.fila-rank .pos{width:34px;font-weight:700;color:var(--suave)}
+.fila-rank .punto{width:14px;height:14px;border-radius:50%;flex:none}
+.fila-rank .nom{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fila-rank .pts{font-weight:700}
+.fila-rank .mas{color:#7dffb0;font-size:.8em;margin-left:6px}
+.fila-rank.oro{background:linear-gradient(90deg,#f5b70055,var(--panel))}
+
+.fin-nivel{width:100%;max-width:1300px;display:flex;flex-direction:column;gap:22px;align-items:center}
+.ganadores{display:flex;gap:24px;flex-wrap:wrap;justify-content:center}
+.ganador{display:flex;flex-direction:column;align-items:center;gap:10px;animation:pop .7s ease-out both}
+.ganador .q{width:120px;height:120px}
+.ganador .nom{font-size:clamp(26px,3vw,44px);font-weight:700}
+.ganador .pts{color:var(--suave);font-size:22px}
+.rank-cols{columns:2 320px;column-gap:18px;width:100%}
+.rank-cols .fila-rank{break-inside:avoid}
+
+.tabla-final{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:clamp(16px,1.5vw,22px)}
+.tabla-final th{color:var(--suave);font-weight:500;padding:4px 10px;text-align:center}
+.tabla-final th:nth-child(2),.tabla-final td:nth-child(2){text-align:left}
+.tabla-final td{background:var(--panel);padding:10px;text-align:center}
+.tabla-final td:first-child{border-radius:14px 0 0 14px;font-weight:700}
+.tabla-final td:last-child{border-radius:0 14px 14px 0}
+.tabla-final td.q-celda svg{width:40px;height:40px;vertical-align:middle}
+.tabla-final td.ganado{color:#fff;font-weight:700}
+.scroll{max-height:52vh;overflow:auto;width:100%;padding-right:6px}
+
+.podio{display:flex;align-items:flex-end;justify-content:center;gap:18px;margin-top:10px}
+.peldano{display:flex;flex-direction:column;align-items:center;gap:8px;animation:pop .8s ease-out both}
+.peldano .q{width:clamp(70px,7vw,110px);height:clamp(70px,7vw,110px)}
+.peldano .nom{font-size:clamp(20px,2.4vw,36px);font-weight:700;max-width:260px;text-align:center;overflow-wrap:anywhere}
+.peldano .bloque{width:clamp(130px,14vw,220px);border-radius:18px 18px 0 0;display:grid;place-items:center;font-size:clamp(34px,4vw,60px);font-weight:700}
+.peldano.p1 .bloque{height:130px;background:var(--amarillo);color:#2a1a6e}
+.peldano.p2 .bloque{height:95px;background:#cfd6e6;color:#2a1a6e}
+.peldano.p3 .bloque{height:65px;background:#e0975a;color:#2a1a6e}
+.peldano .det{color:var(--suave);font-size:18px}
+
+.avatar{display:inline-grid;place-items:center;border-radius:50%;border:3px solid;object-fit:cover;flex:none;color:#fff;font-weight:700;line-height:1;background:#0003}
+.chip .avatar{margin-left:-10px}
+.celda-jug{display:inline-flex;align-items:center;gap:10px}
+.ganador .avatar,.peldano .avatar{box-shadow:0 6px 0 #0003}
+.casilla{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:17px;color:var(--suave);cursor:pointer}
+.casilla input{width:22px;height:22px;accent-color:#ffcf3a;flex:none}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,40px);opacity:0;transition:.3s;background:#fff;color:#2a1a6e;
+  font-weight:600;border-radius:16px;padding:14px 20px;max-width:min(92vw,720px);box-shadow:0 10px 30px #0006;z-index:99;pointer-events:none;text-align:center}
+#toast.visible{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- MÓVIL (jugador) ---------- */
+.movil{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:18px 16px calc(18px + env(safe-area-inset-bottom));gap:16px}
+.movil .cabecera{display:flex;justify-content:space-between;align-items:center;font-weight:600;gap:10px}
+.movil .yo{display:flex;align-items:center;gap:8px;background:var(--panel2);border-radius:999px;padding:6px 14px 6px 6px;font-size:16px;max-width:65%}
+.movil .yo .punto{width:26px;height:26px;border-radius:50%;flex:none}
+.movil .yo span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.movil .cuerpo{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:18px;text-align:center}
+.movil h2{font-size:30px;line-height:1.1}
+.movil p{color:var(--suave);font-size:18px}
+.movil .entrada{width:100%;max-width:380px;display:flex;flex-direction:column;gap:14px}
+.movil .entrada input{font-size:24px;padding:16px;border-radius:16px;border:0;text-align:center;color:#22155d;font-weight:600;width:100%}
+.movil .entrada .btn{width:100%}
+.movil .zona-selfie{display:flex;flex-direction:column;align-items:center;gap:10px}
+.movil .btn.selfie{font-size:18px;padding:14px 20px;width:100%;text-align:center}
+.movil .btn.mini{font-size:15px;padding:8px 16px;width:auto}
+.movil .botones.largas{grid-template-columns:1fr}
+.movil .botones.largas .resp{flex-direction:row;justify-content:flex-start;text-align:left;font-size:16px;padding:10px 14px;gap:12px}
+.movil .botones.largas .resp .forma{font-size:24px}
+.movil .error{color:#ffcf3a;font-weight:600;min-height:24px}
+.movil .botones{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:12px;width:100%}
+.movil .botones.dos{grid-template-columns:1fr}
+.movil .resp{border-radius:20px;color:#fff;font-size:19px;font-weight:600;padding:14px 10px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 0 #0003;line-height:1.15;overflow-wrap:anywhere}
+.movil .resp .forma{font-size:34px}
+.movil .resp:active{transform:translateY(3px);box-shadow:0 3px 0 #0003}
+.movil .barra-tiempo{height:12px;background:#ffffff26;border-radius:999px;overflow:hidden;width:100%}
+.movil .barra-tiempo i{display:block;height:100%;background:#fff;border-radius:999px;width:100%}
+.movil .preg-movil{background:#fff;color:#22155d;border-radius:18px;padding:14px 16px;font-size:18px;font-weight:600;text-align:left;line-height:1.25}
+.movil .grande{font-size:84px;line-height:1;animation:pop .6s ease-out}
+.movil .puntos{font-size:44px;font-weight:700}
+.movil .quesito-movil{width:150px;height:150px;animation:pop .7s ease-out}
+.movil.ok{background:linear-gradient(160deg,#0f8a45,#1fb45a)}
+.movil.mal{background:linear-gradient(160deg,#9e1b32,#e8384f)}
+
+@media (max-width:900px){
+  .inicio-grid,.lobby,.resultado-grid{grid-template-columns:1fr}
+  .qr-caja #qr{width:260px;height:260px}
+  .opciones{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =====================================================================
+   1. CONFIGURACIÓN DE FIREBASE
+   Pega aquí los datos de tu proyecto (Configuración del proyecto →
+   Tus apps → Web). Mientras databaseURL esté vacío, el juego funciona
+   en MODO PRUEBA: solo entre pestañas del mismo navegador.
+   Reglas de Realtime Database (pestaña «Reglas»):
+     { "rules": { "trivialAlmacen": { "salas": { "$sala": {
+         ".read": true, ".write": true } } } } }
+   ===================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyD_ZvOsf7dZLeY7ls9cSh-xtQlcvsaKyrY",
+  authDomain: "trivial-almacenaje.firebaseapp.com",
+  databaseURL: "https://trivial-almacenaje-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "trivial-almacenaje",
+  appId: "1:5282622826:web:c612f663b87fd3d8110913"
+};
+
+/* =====================================================================
+   2. AJUSTES DEL JUEGO
+   ===================================================================== */
+const AJUSTES = {
+  titulo: "Trivial del Almacén",
+  subtitulo: "Almacenaje · 1.º Grado Básico de Servicios Comerciales",
+  segundosPorPregunta: 20,     // se puede cambiar también en la pantalla de inicio
+  segundosPuntuacionMaxima: 5, // si aciertan en estos segundos: puntuación máxima
+  puntosMaximos: 100,
+  puntosMinimos: 10,           // lo que vale un acierto en el último segundo
+  permitirSelfies: true        // valor inicial de la casilla «Permitir selfies» en la pantalla de inicio
+};
+
+/* =====================================================================
+   3. TEMAS, BLOQUES Y PREGUNTAS
+   Cada tema tiene su color y uno o varios bloques; cada bloque es un
+   nivel de la partida y reparte su propio quesito.
+   Para abrir un tema: cambia su título, pon bloqueado: false y añade
+   sus bloques. "correcta" = posición de la respuesta buena empezando
+   a contar en 0 (0 = primera, 1 = segunda, 2 = tercera, 3 = cuarta).
+   ===================================================================== */
+const TEMAS = [
+  { titulo: "La logística en la empresa", color: "#2d7ff9", bloqueado: false, bloques: [
+      { titulo: "La empresa", preguntas: [
+          { texto: "¿Qué es una empresa?",
+            opciones: ["Una organización que fabrica productos y siempre busca obtener beneficio económico", "Una organización en la que una o varias personas desarrollan actividades relacionadas con los factores de producción", "Un establecimiento que compra productos a sus proveedores para venderlos a sus clientes", "Un conjunto de departamentos que ofrecen únicamente bienes intangibles"], correcta: 1 },
+          { texto: "¿Cuál es la finalidad de una empresa?",
+            opciones: ["Satisfacer las necesidades de sus clientes poniendo a su disposición bienes o servicios", "Obtener siempre el máximo beneficio económico", "Fabricar el mayor número posible de productos", "Organizar sus factores de producción en departamentos"], correcta: 0 },
+          { texto: "¿Cuál de estos NO es uno de los cuatro factores de producción de una empresa?",
+            opciones: ["La tecnología", "El capital", "La naturaleza", "La logística"], correcta: 3 },
+          { texto: "El dinero y las instalaciones que una empresa emplea para producir pertenecen al factor…",
+            opciones: ["Naturaleza", "Tecnología", "Capital", "Trabajo"], correcta: 2 },
+          { texto: "El capital está formado por recursos…",
+            opciones: ["Naturales de donde se obtienen las materias primas", "No naturales que se emplean para producir bienes o servicios", "Humanos necesarios para la producción", "Técnicos, como los procesos y las máquinas"], correcta: 1 },
+          { texto: "La capacidad humana necesaria para la producción es el factor…",
+            opciones: ["Trabajo", "Capital", "Tecnología", "Departamento de Administración"], correcta: 0 },
+          { texto: "El espacio natural donde se desarrolla la producción y de donde se obtienen las materias primas es el factor…",
+            opciones: ["Tecnología", "Capital", "Materias primas", "Naturaleza"], correcta: 3 },
+          { texto: "Los procesos, técnicas y máquinas utilizados para producir forman el factor…",
+            opciones: ["Trabajo", "Capital", "Tecnología", "Producción"], correcta: 2 },
+          { texto: "Una empresa que transforma materias primas en productos es una empresa…",
+            opciones: ["Comercial", "Industrial", "De servicios", "Corporativa"], correcta: 1 },
+          { texto: "Un supermercado compra productos a sus proveedores y los vende. Según su actividad, es una empresa…",
+            opciones: ["Comercial", "De servicios", "Industrial", "Logística"], correcta: 0 },
+          { texto: "Una autoescuela no fabrica ni vende productos: ofrece bienes intangibles. Es una empresa…",
+            opciones: ["De producción", "Comercial", "Industrial", "De servicios"], correcta: 3 },
+          { texto: "¿Qué departamento define, dirige y gestiona los objetivos de la empresa y lleva los RR. HH., la contabilidad y la financiación?",
+            opciones: ["Logística", "Comercial", "Administración", "Producción"], correcta: 2 },
+          { texto: "¿Qué departamento se encarga de la captación de clientes, el marketing y la atención al cliente?",
+            opciones: ["Administración", "Comercial", "Producción", "Logística"], correcta: 1 },
+          { texto: "La I+D, la fabricación y el control de calidad de los productos corresponden al departamento de…",
+            opciones: ["Producción", "Logística", "Comercial", "Administración"], correcta: 0 },
+          { texto: "¿Tienen todas las empresas los mismos departamentos?",
+            opciones: ["Sí: la ley obliga a tener los mismos departamentos", "Sí: todas tienen Administración, Comercial, Producción y Logística", "No: solo las empresas industriales están divididas en departamentos", "No: el número de departamentos se adapta a las necesidades y la evolución de cada empresa"], correcta: 3 },
+          { texto: "Si la comunicación entre los departamentos falla, ¿qué ocurre?",
+            opciones: ["Solo se retrasan los pedidos de los clientes nuevos", "Solo se ve afectado el departamento que ha fallado", "Puede paralizarse la producción o perderse un cliente, con más costes y menos beneficios", "Nada importante, porque cada departamento tiene sus propias funciones"], correcta: 2 }
+      ] },
+      { titulo: "La logística y su departamento", preguntas: [
+          { texto: "¿Qué es la logística?",
+            opciones: ["El departamento que se encarga de fabricar y controlar la calidad de los productos", "El conjunto de actividades para dar a conocer el producto y captar clientes", "El conjunto de actividades para que el producto o servicio esté a disposición del cliente cuando lo necesita", "El transporte de mercancías desde un país hasta otro"], correcta: 2 },
+          { texto: "La logística que gestiona la distribución de mercancía entre las fábricas y las tiendas de una empresa es la…",
+            opciones: ["Interna", "Corporativa", "Empresarial", "Externa"], correcta: 1 },
+          { texto: "Cuando el proceso logístico empieza en un país y termina en otro diferente, la logística es…",
+            opciones: ["Internacional", "Externa", "Corporativa", "Inversa"], correcta: 0 },
+          { texto: "La recepción, el almacenamiento, el control de existencias y la distribución interna dentro de una empresa forman la logística…",
+            opciones: ["Empresarial", "De instalaciones", "Corporativa", "Interna"], correcta: 3 },
+          { texto: "Cuando el servicio es ajeno a la empresa y permite que el producto final llegue a su destinatario, la logística es…",
+            opciones: ["Corporativa", "Internacional", "Externa", "Inversa"], correcta: 2 },
+          { texto: "La logística que gestiona el retorno de las mercancías devueltas o de los residuos es la…",
+            opciones: ["Externa", "Inversa", "Interna", "De instalaciones"], correcta: 1 },
+          { texto: "La logística que mejora los procesos de una empresa para que sean más baratos, más rápidos o de más calidad es la…",
+            opciones: ["Empresarial", "Corporativa", "De instalaciones", "Interna"], correcta: 0 },
+          { texto: "La logística que se centra en las operaciones del almacén para la manipulación de mercancías es la…",
+            opciones: ["Corporativa", "Interna", "Empresarial", "De instalaciones"], correcta: 3 },
+          { texto: "Un cliente devuelve unas zapatillas compradas por internet y la tienda gestiona su regreso al almacén. ¿Qué logística es?",
+            opciones: ["Corporativa", "Externa", "Inversa", "Interna"], correcta: 2 },
+          { texto: "Una tienda contrata a una empresa de mensajería para que entregue sus pedidos a los clientes. ¿Qué logística es?",
+            opciones: ["Interna", "Externa", "Corporativa", "Inversa"], correcta: 1 },
+          { texto: "Externalizar las tareas de logística significa…",
+            opciones: ["Contratarlas a otra empresa", "Integrarlas en el organigrama de la propia empresa", "Enviar la mercancía a otro país", "Sacar la mercancía del almacén"], correcta: 0 },
+          { texto: "¿Cuáles son las tres áreas funcionales de la logística?",
+            opciones: ["Compras, ventas y marketing", "Almacén, transporte y documentación", "Recepción, almacenaje y expedición", "Almacén, distribución y compras"], correcta: 3 },
+          { texto: "El aprovisionamiento y la relación con los proveedores corresponden al área de…",
+            opciones: ["Almacén", "Distribución", "Compras", "Comercial"], correcta: 2 },
+          { texto: "La entrega de pedidos a los clientes o a otras tiendas o almacenes de la empresa corresponde al área de…",
+            opciones: ["Almacén", "Distribución", "Compras", "Comercial"], correcta: 1 },
+          { texto: "Registrar con documentos cada movimiento de mercancía es la función de…",
+            opciones: ["Documentación", "Procesar los pedidos", "Almacenaje", "Manipular la mercancía"], correcta: 0 },
+          { texto: "Mover o trasladar la mercancía para que esté disponible en el momento y el lugar precisos es la función de…",
+            opciones: ["Procesar los pedidos", "Transporte", "Almacenaje", "Manipular la mercancía"], correcta: 3 }
+      ] },
+      { titulo: "Mercancías y transporte", preguntas: [
+          { texto: "¿Qué son las mercancías o mercaderías?",
+            opciones: ["Las materias primas que se utilizan para producir", "Solo los bienes tangibles que se guardan en un almacén", "Solo los productos que fabrica la propia empresa", "Bienes tangibles o intangibles que pueden comprarse o venderse porque tienen valor económico"], correcta: 3 },
+          { texto: "¿Cuál es el principal objetivo de la logística respecto a las mercancías?",
+            opciones: ["Que se transporten siempre por el medio más barato", "Que se entreguen lo antes posible, aunque la cantidad no sea exacta", "Que lleguen a su destino con la calidad y la cantidad que ha solicitado el cliente", "Que permanezcan en el almacén el mayor tiempo posible"], correcta: 2 },
+          { texto: "Las existencias o stocks son…",
+            opciones: ["Solo los productos terminados que hay en el almacén", "Los activos que adquiere una empresa para venderlos o incorporarlos al proceso de producción", "Las mercancías que los clientes devuelven", "Los productos que tienen fecha de caducidad"], correcta: 1 },
+          { texto: "Los productos ya fabricados y destinados a la venta son…",
+            opciones: ["Productos terminados", "Productos semiterminados", "Mercaderías", "Productos en curso"], correcta: 0 },
+          { texto: "Los materiales a partir de los cuales se fabrican los productos son…",
+            opciones: ["Mercaderías", "Productos en curso", "Productos semiterminados", "Materias primas"], correcta: 3 },
+          { texto: "Los productos a los que todavía les falta elaboración son…",
+            opciones: ["Materias primas", "Productos en curso", "Productos semiterminados", "Productos terminados"], correcta: 2 },
+          { texto: "Cualquier producto adquirido por una empresa para el desarrollo de su actividad se llama…",
+            opciones: ["Materias primas", "Mercaderías", "Productos terminados", "Productos en curso"], correcta: 1 },
+          { texto: "Según su caducidad, una lata de conservas con fecha de consumo preferente es un producto…",
+            opciones: ["Perecedero", "Duradero", "Semiterminado", "Semoviente"], correcta: 0 },
+          { texto: "Los bienes duraderos son aquellos que…",
+            opciones: ["Llevan fecha de consumo preferente", "Tienen un periodo de consumo limitado", "Se consumen de inmediato y no pueden reutilizarse", "No se consumen de inmediato y pueden reutilizarse"], correcta: 3 },
+          { texto: "Según su estado físico, un camión que transporta ovejas lleva mercancía…",
+            opciones: ["Perecedera", "Sólida", "Semoviente", "Gaseosa"], correcta: 2 },
+          { texto: "Las mercancías que adoptan la forma del envase que las contiene son…",
+            opciones: ["Gaseosas", "Líquidas", "Sólidas", "Semovientes"], correcta: 1 },
+          { texto: "Las sustancias que pueden provocar efectos nocivos en los seres vivos son…",
+            opciones: ["Tóxicas", "Radioactivas", "Inflamables", "Explosivas"], correcta: 0 },
+          { texto: "La utilización de al menos dos medios de transporte distintos se conoce como…",
+            opciones: ["Transporte por tubería", "Logística internacional", "Logística corporativa", "Transporte multimodal o intermodalidad"], correcta: 3 },
+          { texto: "¿Qué es un modo de transporte?",
+            opciones: ["La ruta que sigue la mercancía hasta su destino", "El vehículo concreto que lleva la mercancía", "El sistema que se utiliza para trasladar la mercancía entre quien la envía y quien la recibe", "La empresa que se encarga de transportar la mercancía"], correcta: 2 },
+          { texto: "¿Cuál de estos es un MODO de transporte y no un medio?",
+            opciones: ["Camión", "Terrestre", "Tren", "Barco"], correcta: 1 },
+          { texto: "El gas llega a España a través de gasoductos. Según los apuntes, ¿qué modo de transporte es?",
+            opciones: ["Por tubería", "Terrestre", "Marítimo", "Fluvial"], correcta: 0 }
+      ] },
+      { titulo: "Documentos de la compraventa", preguntas: [
+          { texto: "¿Qué es una compraventa?",
+            opciones: ["La operación en la que un comprador adquiere un producto o servicio a un vendedor a cambio de dinero", "El documento que justifica la entrega de la mercancía al cliente", "La operación en la que un proveedor envía mercancía sin que se la hayan pedido", "El intercambio de productos entre dos clientes sin que haya dinero"], correcta: 0 },
+          { texto: "¿Qué documento emite el cliente y recibe el proveedor para solicitar mercancías o servicios?",
+            opciones: ["El albarán", "La hoja de solicitud", "El registro de pedidos", "El pedido"], correcta: 3 },
+          { texto: "¿Qué documento realiza la empresa que tiene que tramitar el pedido cuando un cliente le solicita algo?",
+            opciones: ["La hoja de registro", "El pedido", "La hoja de solicitud", "El registro de pedidos"], correcta: 2 },
+          { texto: "¿Qué documento registra todos los pedidos emitidos (solicitados)?",
+            opciones: ["La hoja de registro", "El registro de pedidos", "La hoja de solicitud", "El picking list"], correcta: 1 },
+          { texto: "¿Qué documento interno deja constancia de los pedidos y de las mercancías recibidas en el almacén?",
+            opciones: ["La hoja de registro", "El registro de pedidos", "El albarán", "La hoja de solicitud"], correcta: 0 },
+          { texto: "¿Cuál es el orden correcto de los documentos en una compraventa?",
+            opciones: ["Pedido → albarán → registro de pedido → hoja de solicitud → hoja de registro", "Pedido → hoja de solicitud → registro de pedido → albarán → hoja de registro", "Hoja de solicitud → pedido → albarán → registro de pedido → hoja de registro", "Pedido → registro de pedido → hoja de solicitud → albarán → hoja de registro"], correcta: 3 },
+          { texto: "¿Quién emite el albarán y cuándo lo entrega?",
+            opciones: ["El vendedor, después de cobrar la mercancía", "El cliente, al hacer el pedido", "El vendedor, junto con la mercancía", "El transportista, al cargar el camión"], correcta: 2 },
+          { texto: "¿Qué documento justifica la operación de compraventa, lo emite el proveedor y debe coincidir con los datos del albarán?",
+            opciones: ["El albarán valorado", "La factura", "El pedido", "La hoja de registro"], correcta: 1 },
+          { texto: "Además de acreditar que la mercancía se ha entregado, el albarán sirve…",
+            opciones: ["De guía para elaborar la factura", "Para solicitar la mercancía al proveedor", "Para registrar todos los pedidos emitidos", "Para pagar el transporte en el destino"], correcta: 0 },
+          { texto: "Si la mercancía viaja «a portes debidos», el coste del transporte se paga…",
+            opciones: ["Al firmar la factura", "Al salir del almacén", "Al hacer el pedido", "En el destino"], correcta: 3 },
+          { texto: "Si la mercancía viaja «a portes pagados», el coste del transporte se paga…",
+            opciones: ["Al devolver la mercancía", "En el destino", "Al salir del almacén", "Al recibir la factura"], correcta: 2 },
+          { texto: "¿Qué apartado del albarán recoge el nombre y la firma del cliente y sirve como aceptación para que el vendedor pueda facturar?",
+            opciones: ["Observaciones", "Recibí", "Forma de envío", "Descripción de la mercancía"], correcta: 1 },
+          { texto: "¿En qué apartado del albarán hace constar el cliente las incidencias de la mercancía recibida?",
+            opciones: ["Observaciones", "Recibí", "Descripción de la mercancía", "Lugar de entrega"], correcta: 0 },
+          { texto: "¿Cuándo se expide un albarán valorado?",
+            opciones: ["Cuando los géneros recibidos no coinciden con los pedidos", "Cuando el comprador pide factura y paga a plazos", "Cuando la mercancía viaja a portes pagados", "Cuando el comprador no exige factura y paga al contado al retirar la mercancía"], correcta: 3 },
+          { texto: "Según los apuntes, ¿qué documento NO ha sido sustituido por aplicaciones informáticas?",
+            opciones: ["El registro de pedidos", "El pedido", "El albarán", "La hoja de solicitud"], correcta: 2 },
+          { texto: "Si los géneros recibidos no coinciden con los solicitados, ¿qué se hace?",
+            opciones: ["Se firma el albarán y se reclama después al proveedor", "Se devuelven con una nota de entrega sin firmar la conformidad, o se rectifica el albarán antes de firmarlo", "Se firma la conformidad y se anota la diferencia en la factura", "Se aceptan y se descuentan en el siguiente pedido"], correcta: 1 }
+      ] },
+      { titulo: "Recepción y control de descargas", preguntas: [
+          { texto: "¿Por qué la recepción es una de las operaciones más importantes del almacén?",
+            opciones: ["Porque es la última fase antes de entregar al cliente", "Porque es la que inicia el flujo de materiales", "Porque en ella se elabora la factura", "Porque en ella se preparan los pedidos de los clientes"], correcta: 1 },
+          { texto: "¿En qué zona del almacén se desarrolla el método de control de descargas?",
+            opciones: ["En la zona de recepción", "En el muelle de descarga", "En la zona de expedición", "En la zona de cuarentena"], correcta: 0 },
+          { texto: "Cuando el vehículo llega con la carga al almacén, ¿adónde se dirige en primer lugar?",
+            opciones: ["A la zona de expedición", "A la zona de recepción", "A la zona de cuarentena", "Al muelle de descarga"], correcta: 3 },
+          { texto: "¿Cuál es el orden correcto de las fases del control de descargas?",
+            opciones: ["Comprobación documental → planificación → pesaje → examen visual → control de calidad → codificación", "Planificación → examen visual → comprobación documental → codificación → pesaje → control de calidad", "Planificación → comprobación documental → examen visual → pesaje → codificación → control de calidad", "Planificación → comprobación documental → pesaje → examen visual → control de calidad → codificación"], correcta: 2 },
+          { texto: "¿Cuál es la primera fase del control de descargas?",
+            opciones: ["Comprobación documental", "Planificación de la llegada de mercancías", "Examen visual", "Pesaje de la mercancía"], correcta: 1 },
+          { texto: "¿Cuál es la última fase del control de descargas?",
+            opciones: ["Control de calidad de la mercancía", "Codificación de la mercancía", "Pesaje de la mercancía", "Examen visual"], correcta: 0 },
+          { texto: "¿En qué consiste la planificación de la llegada de mercancías?",
+            opciones: ["En revisar si la mercancía tiene golpes o roturas", "En comprobar que las referencias coinciden con las mercancías solicitadas", "En dar de alta la mercancía en el sistema informático", "En fijar un horario y asignar un muelle a cada transportista para no colapsar la entrada"], correcta: 3 },
+          { texto: "Revisar los documentos para verificar que no falta mercancía y que las referencias coinciden con lo pedido es la fase de…",
+            opciones: ["Codificación", "Examen visual", "Comprobación documental", "Pesaje"], correcta: 2 },
+          { texto: "Comprobar que no hay golpes ni roturas y que el embalaje está en perfecto estado es la fase de…",
+            opciones: ["Control de calidad", "Examen visual", "Comprobación documental", "Pesaje"], correcta: 1 },
+          { texto: "¿Para qué se pesan los bultos recibidos?",
+            opciones: ["Porque si el peso está dentro de lo previsto, contienen lo pedido y solo hay que revisar los que no", "Para calcular el coste del transporte", "Para decidir en qué estantería se colocan", "Para anotar el peso en la factura"], correcta: 0 },
+          { texto: "Dar de alta la mercancía en el sistema informático escaneando su código de barras es la fase de…",
+            opciones: ["Planificación", "Comprobación documental", "Control de calidad", "Codificación"], correcta: 3 },
+          { texto: "¿Qué mercancías tienen que pasar el control de calidad?",
+            opciones: ["Solo las que llegan con el embalaje dañado", "Todas las mercancías que llegan al almacén", "Solo algunas, según el tipo de producto, como medicamentos o congelados", "Solo las de proveedores que no admiten devoluciones"], correcta: 2 },
+          { texto: "¿Dónde permanece la mercancía hasta que supera el control de calidad y se autoriza su colocación?",
+            opciones: ["En la zona de recepción", "En la zona de cuarentena", "En el muelle de descarga", "En la zona de devoluciones"], correcta: 1 },
+          { texto: "¿Qué dato NO aparece en el libro de registro de pedidos?",
+            opciones: ["El peso de los bultos", "El número de albarán", "La fecha de recepción", "El NIF del proveedor"], correcta: 0 },
+          { texto: "Si al recibir la mercancía se detecta que está defectuosa, ¿qué hay que hacer?",
+            opciones: ["Firmar la conformidad y anotarlo en la factura", "Rectificar el albarán e indicarlo en las observaciones", "Dejarla en la zona de cuarentena", "Devolverla haciendo una reclamación"], correcta: 3 },
+          { texto: "¿Qué documento recibe la persona encargada de preparar los pedidos, con todo lo solicitado por el cliente?",
+            opciones: ["El albarán", "La hoja de solicitud", "El picking list", "El registro de pedidos"], correcta: 2 }
+      ] }
+  ] },
+  { titulo: "Tema 2", color: "#ff4fa3", bloqueado: true, bloques: [] },
+  { titulo: "Tema 3", color: "#f5b700", bloqueado: true, bloques: [] },
+  { titulo: "Tema 4", color: "#1fb45a", bloqueado: true, bloques: [] },
+  { titulo: "Tema 5", color: "#ff8a1f", bloqueado: true, bloques: [] },
+  { titulo: "Tema 6", color: "#8b5cf6", bloqueado: true, bloques: [] },
+  { titulo: "Tema 7", color: "#14c4d6", bloqueado: true, bloques: [] },
+  { titulo: "Tema 8", color: "#e8384f", bloqueado: true, bloques: [] }
+];
+
+// Niveles de la partida en curso: se construyen con los bloques que elige el profesor.
+let NIVELES = [];
+
+/* =====================================================================
+   A PARTIR DE AQUÍ, EL FUNCIONAMIENTO DEL JUEGO
+   ===================================================================== */
+const COLORES_NIVEL = ["#2d7ff9","#ff4fa3","#f5b700","#1fb45a","#ff8a1f","#8b5cf6","#14c4d6","#e8384f"];
+const COLORES_JUG = ["#e8384f","#2d7ff9","#f5b700","#1fb45a","#ff4fa3","#ff8a1f","#8b5cf6","#14c4d6","#ef6c8f","#5ab0ff","#9adf4a","#c77dff"];
+const FORMAS = ["▲","◆","●","■"];
+const RAIZ = "trivialAlmacen/salas";
+const params = new URLSearchParams(location.search);
+const $app = document.getElementById("app");
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+let COLORES_ACTIVOS = null;   // colores de los niveles de la partida (el móvil los recibe de la pantalla)
+const colorNivel = i => (COLORES_ACTIVOS && COLORES_ACTIVOS[i]) || COLORES_NIVEL[i % COLORES_NIVEL.length];
+function tono(hex, f) {        // f > 0 aclara, f < 0 oscurece
+  const n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255];
+  const m = c.map(v => Math.round(f >= 0 ? v + (255 - v) * f : v * (1 + f)));
+  return "#" + m.map(v => v.toString(16).padStart(2, "0")).join("");
+}
+function colorBloque(ti, bi) {
+  const B = TEMAS[ti].bloques.length;
+  return B <= 1 ? TEMAS[ti].color : tono(TEMAS[ti].color, -0.3 + 0.6 * bi / (B - 1));
+}
+const logoSVG = () => quesitoSVG(TEMAS.length, TEMAS.map((_, i) => i), -1, TEMAS.map(t => t.color));
+function bloquesDisponibles() {
+  const l = [];
+  TEMAS.forEach((t, ti) => { if (!t.bloqueado) t.bloques.forEach((b, bi) => l.push(`${ti}-${bi}`)); });
+  return l;
+}
+function construirNiveles(seleccion) {
+  NIVELES = [];
+  TEMAS.forEach((t, ti) => {
+    if (t.bloqueado) return;
+    t.bloques.forEach((b, bi) => {
+      if (seleccion.includes(`${ti}-${bi}`))
+        NIVELES.push({ tema: b.titulo, temaNum: ti + 1, temaNombre: t.titulo, color: colorBloque(ti, bi), preguntas: b.preguntas });
+    });
+  });
+  COLORES_ACTIVOS = NIVELES.map(n => n.color);
+}
+const nuevoId = () => Math.random().toString(36).slice(2, 10);
+// Solo se aceptan fotos JPEG pequeñas en base64 hechas por el propio juego.
+const fotoValida = f => typeof f === "string" && f.length < 60000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(f);
+function avatar(j, px) {
+  const color = (j && j.color) || "#888", nom = (j && j.nombre) || "?";
+  const base = `width:${px}px;height:${px}px;border-color:${color}`;
+  if (j && fotoValida(j.foto)) return `<img class="avatar" alt="" src="${j.foto}" style="${base}">`;
+  return `<span class="avatar" style="${base};background:${color};font-size:${Math.round(px * .48)}px">${esc(nom.charAt(0).toUpperCase())}</span>`;
+}
+
+function quesitoSVG(total, ganados = [], resaltar = -1, colores = null) {
+  const col = i => (colores ? colores[i] : colorNivel(i));
+  // Círculo dividido en tantas porciones como niveles; las ganadas, en color.
+  const r = 46, c = 50, partes = [];
+  if (total === 1) {
+    const c0 = ganados.includes(0) ? col(0) : "rgba(255,255,255,.08)";
+    partes.push(`<circle cx="50" cy="50" r="${r}" fill="${c0}" stroke="#fff" stroke-width="3"/>`);
+  } else {
+    for (let i = 0; i < total; i++) {
+      const a0 = (i / total) * 2 * Math.PI - Math.PI / 2, a1 = ((i + 1) / total) * 2 * Math.PI - Math.PI / 2;
+      const x0 = c + r * Math.cos(a0), y0 = c + r * Math.sin(a0), x1 = c + r * Math.cos(a1), y1 = c + r * Math.sin(a1);
+      const grande = (a1 - a0) > Math.PI ? 1 : 0;
+      const relleno = ganados.includes(i) || i === resaltar ? col(i) : "rgba(255,255,255,.08)";
+      partes.push(`<path d="M${c},${c} L${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 ${grande} 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z" fill="${relleno}" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>`);
+    }
+  }
+  return `<svg viewBox="0 0 100 100" aria-hidden="true">${partes.join("")}<circle cx="50" cy="50" r="${r}" fill="none" stroke="#fff" stroke-width="4"/></svg>`;
+}
+
+/* ---------------------------------------------------------------------
+   CONEXIÓN: Firebase Realtime Database o modo prueba (localStorage)
+   --------------------------------------------------------------------- */
+const T = (() => {
+  let modo = "prueba", db = null, offset = 0, errorMsg = "";
+  const LS = "trivialAlmacen_prueba";
+  const oyentes = [];
+  const leer = () => { try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch (e) { return {}; } };
+  const ruta = (o, p) => p.split("/").reduce((a, k) => (a == null ? undefined : a[k]), o);
+  function poner(o, p, v) {
+    const ks = p.split("/"); let a = o;
+    for (let i = 0; i < ks.length - 1; i++) { if (typeof a[ks[i]] !== "object" || a[ks[i]] === null) a[ks[i]] = {}; a = a[ks[i]]; }
+    if (v === null || v === undefined) delete a[ks[ks.length - 1]]; else a[ks[ks.length - 1]] = v;
+  }
+  function avisar() {
+    const o = leer();
+    oyentes.forEach(l => {
+      let v = ruta(o, l.p); if (v === undefined) v = null;
+      const s = JSON.stringify(v);
+      if (s !== l.ultimo) { l.ultimo = s; l.cb(v === null ? null : JSON.parse(s)); }
+    });
+  }
+  window.addEventListener("storage", e => { if (e.key === LS) avisar(); });
+  const cargar = src => new Promise((ok, mal) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => mal(new Error("network: no se pudo cargar " + src)); document.head.appendChild(s); });
+
+  return {
+    async iniciar() {
+      if (FIREBASE_CONFIG.databaseURL && !params.has("prueba")) {
+        try {
+          await cargar("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
+          await cargar("https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js");
+          await cargar("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js");
+          firebase.initializeApp(FIREBASE_CONFIG);
+          await firebase.auth().signInAnonymously();
+          db = firebase.database();
+          db.ref(".info/serverTimeOffset").on("value", s => { offset = s.val() || 0; });
+          modo = "firebase";
+        } catch (e) { console.error(e); modo = "error"; errorMsg = (e && (e.code || e.message)) || "error desconocido"; }
+      }
+      return modo;
+    },
+    modo: () => modo,
+    error: () => errorMsg,
+    ahora: () => Date.now() + offset,
+    sello: () => (modo === "firebase" ? firebase.database.ServerValue.TIMESTAMP : Date.now()),
+    set(p, v) {
+      if (modo === "firebase") return db.ref(p).set(v);
+      const o = leer(); poner(o, p, v); localStorage.setItem(LS, JSON.stringify(o)); avisar(); return Promise.resolve();
+    },
+    async get(p) {
+      if (modo === "firebase") return (await db.ref(p).once("value")).val();
+      const v = ruta(leer(), p); return v === undefined ? null : v;
+    },
+    on(p, cb) {
+      if (modo === "firebase") { const r = db.ref(p); const h = s => cb(s.val()); r.on("value", h); return () => r.off("value", h); }
+      const l = { p, cb, ultimo: undefined }; oyentes.push(l); setTimeout(avisar, 0);
+      return () => { const i = oyentes.indexOf(l); if (i >= 0) oyentes.splice(i, 1); };
+    },
+    limpiarPrueba() { if (modo !== "firebase") { localStorage.removeItem(LS); } }
+  };
+})();
+
+/* ---------------------------------------------------------------------
+   PUNTUACIÓN
+   --------------------------------------------------------------------- */
+function calcularPuntos(segundos, duracion) {
+  const a = AJUSTES.segundosPuntuacionMaxima, M = AJUSTES.puntosMaximos, m = AJUSTES.puntosMinimos;
+  if (segundos <= a) return M;
+  const f = Math.min(1, (segundos - a) / Math.max(1, duracion - a));
+  return Math.round(M - (M - m) * f);
+}
+
+/* =====================================================================
+   VISTA DE PANTALLA (PROFESOR)
+   ===================================================================== */
+const H = {
+  sala: null, fase: "inicio", duracion: AJUSTES.segundosPorPregunta,
+  jugadores: {},          // id -> {nombre, color}
+  nivel: 0, pregunta: 0,  // pregunta = índice de la siguiente por lanzar
+  puntos: {},             // id -> [puntos por nivel]
+  aciertos: {},           // id -> [aciertos por nivel]
+  quesitos: {},           // id -> [índices de nivel ganados]
+  actual: null,           // pregunta en curso
+  ultimo: null            // resultado de la última pregunta
+};
+let offJugadores = null, offRespuestas = null, relojId = null;
+const GUARDADO = "trivialAlmacen_partida";
+
+function guardarPartida() {
+  const { sala, fase, duracion, nivel, pregunta, puntos, aciertos, quesitos, seleccion, fotos } = H;
+  try { localStorage.setItem(GUARDADO, JSON.stringify({ sala, fase, duracion, nivel, pregunta, puntos, aciertos, quesitos, seleccion, fotos, modo: T.modo() })); } catch (e) {}
+}
+const rutaSala = () => `${RAIZ}/${H.sala}`;
+const ponerEstado = obj => T.set(`${rutaSala()}/estado`, { ...obj, colores: COLORES_ACTIVOS || [], totalNiveles: NIVELES.length, fotos: !!H.fotos });
+const nombre = id => (H.jugadores[id] ? H.jugadores[id].nombre : "(se fue)");
+const colorJug = id => (H.jugadores[id] ? H.jugadores[id].color : "#888");
+const ptsNivel = (id, n) => (H.puntos[id] && H.puntos[id][n]) || 0;
+const ptsTotal = id => (H.puntos[id] || []).reduce((a, b) => a + (b || 0), 0);
+const nQuesitos = id => (H.quesitos[id] || []).length;
+
+function cabeceraPantalla(extra = "") {
+  return `<div class="barra">
+    <div class="marca"><div style="width:64px;height:64px">${logoSVG()}</div>
+      <div><h1>${esc(AJUSTES.titulo)}</h1><small>${esc(AJUSTES.subtitulo)}</small></div></div>
+    <div class="derecha">${extra}
+      ${H.sala ? `<span class="etiqueta">Sala ${H.sala} · ${Object.keys(H.jugadores).length} 👤</span>` : ""}
+      <button class="btn secundario" onclick="pantallaCompleta()" title="Pantalla completa">⛶</button></div>
+  </div>`;
+}
+function pantallaCompleta() { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }
+document.addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) {
+    const b = document.querySelector("[data-siguiente]"); if (b && !b.disabled) { e.preventDefault(); b.click(); }
+  }
+});
+
+function explicarError(codigo) {
+  const c = String(codigo || "");
+  if (/operation-not-allowed|admin-restricted/.test(c)) return "Firebase no permite el acceso anónimo: actívalo en Authentication → Método de acceso → Anónimo.";
+  if (/network|failed|load/i.test(c)) return "No se ha podido conectar con Firebase. Comprueba la conexión a internet.";
+  if (/api-key|invalid-api|unauthorized-domain|referer/i.test(c)) return "Firebase ha rechazado esta dirección. Revisa la clave de la web y los dominios autorizados en Authentication → Configuración.";
+  if (/PERMISSION_DENIED|permission/i.test(c)) return "Firebase ha rechazado la operación (permiso denegado). Revisa las reglas de la base de datos.";
+  return "No se ha podido conectar con Firebase (" + c + ").";
+}
+// Cualquier escritura rechazada (reglas, conexión…) se muestra en pantalla en vez de fallar en silencio.
+function aviso(texto) {
+  let t = document.getElementById("toast");
+  if (!t) { t = document.createElement("div"); t.id = "toast"; document.body.appendChild(t); }
+  t.textContent = texto; t.classList.add("visible");
+  clearTimeout(aviso.temp); aviso.temp = setTimeout(() => t.classList.remove("visible"), 7000);
+}
+window.addEventListener("unhandledrejection", ev => {
+  const r = ev.reason || {}; aviso(explicarError(r.code || r.message || String(r)));
+});
+
+function avisoModo() {
+  if (T.modo() === "firebase") return "";
+  if (T.modo() === "error") return `<div class="aviso">${esc(explicarError(T.error()))} <button class="btn secundario" style="font-size:15px;padding:6px 16px;margin-left:8px;color:#2a1a6e;background:#fff" onclick="location.reload()">Reintentar</button></div>`;
+  return `<div class="aviso">MODO PRUEBA: los jugadores solo pueden entrar desde otras pestañas de este mismo navegador. Para jugar con móviles, configura Firebase (ver instrucciones al principio del archivo).</div>`;
+}
+
+const SELECCION = "trivialAlmacen_seleccion";
+function hostInicio() {
+  H.fase = "inicio";
+  let guardada = null; try { guardada = JSON.parse(localStorage.getItem(GUARDADO)); } catch (e) {}
+  const puedeSeguir = guardada && guardada.fase !== "final" && guardada.modo === T.modo() && Array.isArray(guardada.seleccion)
+    && guardada.seleccion.every(k => bloquesDisponibles().includes(k));
+  const disponibles = bloquesDisponibles();
+  let elegidos = null; try { elegidos = JSON.parse(localStorage.getItem(SELECCION)); } catch (e) {}
+  if (!Array.isArray(elegidos)) elegidos = disponibles;
+  elegidos = elegidos.filter(k => disponibles.includes(k));
+  if (!elegidos.length) elegidos = disponibles;
+  if (H.fotos === undefined) H.fotos = AJUSTES.permitirSelfies;
+  const abiertos = TEMAS.map((t, ti) => ({ t, ti })).filter(x => !x.t.bloqueado);
+  const cerrados = TEMAS.map((t, ti) => ({ t, ti })).filter(x => x.t.bloqueado);
+  $app.innerHTML = `<div class="pantalla">${cabeceraPantalla()}
+    <div class="centro">
+      ${avisoModo()}
+      <div class="inicio-grid">
+        <div class="panel">
+          <h2 style="font-size:30px">Temas y bloques</h2>
+          <p style="color:var(--suave);margin-top:4px" id="resumenSel"></p>
+          ${abiertos.map(({ t, ti }) => `<div class="tema-abierto" style="--c:${t.color}">
+            <div class="tema-cab"><span class="num" style="background:${t.color}">${ti + 1}</span><span>${esc(t.titulo)}</span></div>
+            <div class="lista-niveles">
+            ${t.bloques.map((bl, bi) => `<label class="fila-nivel bloque"><input type="checkbox" data-bloque="${ti}-${bi}" data-n="${bl.preguntas.length}" ${elegidos.includes(`${ti}-${bi}`) ? "checked" : ""} onchange="actualizarSeleccion()">
+              <span class="num" style="background:${colorBloque(ti, bi)}">${bi + 1}</span>
+              <span>${esc(bl.titulo)}</span><span class="n">${bl.preguntas.length} preguntas</span></label>`).join("")}
+            </div></div>`).join("")}
+          <div class="temas-cerrados">
+            ${cerrados.map(({ t, ti }) => `<div class="tema-cerrado" title="Se desbloqueará cuando se dé en clase"><span class="candado">🔒</span><span>${esc(t.titulo)}</span></div>`).join("")}
+          </div>
+        </div>
+        <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+          <h2 style="font-size:30px">Cómo se juega</h2>
+          <p style="color:var(--suave);font-size:18px;line-height:1.4">Cada participante entra con su móvil escaneando el QR y elige un nombre. Cada bloque es un nivel de la partida. Una respuesta correcta vale ${AJUSTES.puntosMaximos} puntos si llega en los primeros ${AJUSTES.segundosPuntuacionMaxima} segundos y va perdiendo valor después. Quien más puntos suma en un bloque gana su quesito; al final gana quien tenga más quesitos (si empatan, decide la puntuación total).</p>
+          <div class="campo"><label for="dur">Segundos por pregunta</label>
+            <input id="dur" type="number" min="8" max="90" value="${H.duracion}"></div>
+          <label class="casilla"><input type="checkbox" id="selfies" ${H.fotos ? "checked" : ""}> Permitir que se hagan un selfie como foto de perfil</label>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:16px">
+            <button class="btn color" id="btnCrear" data-siguiente onclick="crearSala()">Crear partida</button>
+            ${puedeSeguir ? `<button class="btn secundario" onclick="reanudar()">Continuar sala ${esc(guardada.sala)}</button>` : ""}
+          </div>
+        </div>
+      </div>
+    </div></div>`;
+  actualizarSeleccion();
+  if (T.modo() === "error") { const b = document.getElementById("btnCrear"); if (b) b.disabled = true; }
+}
+
+function leerSeleccion() {
+  return [...document.querySelectorAll("input[data-bloque]:checked")].map(i => i.dataset.bloque);
+}
+function actualizarSeleccion() {
+  const marcados = [...document.querySelectorAll("input[data-bloque]:checked")];
+  const preg = marcados.reduce((a, i) => a + parseInt(i.dataset.n, 10), 0);
+  const el = document.getElementById("resumenSel");
+  if (el) el.textContent = marcados.length
+    ? `${marcados.length} ${marcados.length === 1 ? "bloque" : "bloques"} · ${preg} preguntas · un quesito por bloque`
+    : "Marca al menos un bloque para jugar";
+  const b = document.getElementById("btnCrear"); if (b) b.disabled = marcados.length === 0 || T.modo() === "error";
+}
+
+function codigoSala() {
+  const L = "ABCDEFGHJKLMNPQRSTUVWXYZ"; let s = "";
+  for (let i = 0; i < 4; i++) s += L[Math.floor(Math.random() * L.length)];
+  return s;
+}
+function leerDuracion() {
+  const el = document.getElementById("dur");
+  if (el) { const v = parseInt(el.value, 10); if (v >= 8 && v <= 90) H.duracion = v; }
+}
+
+async function crearSala() {
+  leerDuracion();
+  const seleccion = leerSeleccion();
+  if (!seleccion.length || T.modo() === "error") return;
+  const cs = document.getElementById("selfies"); H.fotos = cs ? cs.checked : AJUSTES.permitirSelfies;
+  try { localStorage.setItem(SELECCION, JSON.stringify(seleccion)); } catch (e) {}
+  H.seleccion = seleccion;
+  construirNiveles(seleccion);
+  T.limpiarPrueba();
+  Object.assign(H, { sala: codigoSala(), jugadores: {}, nivel: 0, pregunta: 0, puntos: {}, aciertos: {}, quesitos: {}, actual: null, ultimo: null });
+  
+await T.set(rutaSala(), {
+  ...(T.modo() === "firebase"
+    ? { hostUid: firebase.auth().currentUser.uid }
+    : {}),
+  estado: { fase: "lobby", creada: T.ahora(), fotos: !!H.fotos }
+});
+  escucharJugadores();
+  guardarPartida();
+  hostLobby();
+}
+
+async function reanudar() {
+  const g = JSON.parse(localStorage.getItem(GUARDADO));
+  H.seleccion = g.seleccion || bloquesDisponibles();
+  H.fotos = !!g.fotos;
+  construirNiveles(H.seleccion);
+  Object.assign(H, { sala: g.sala, duracion: g.duracion, nivel: g.nivel, pregunta: g.pregunta, puntos: g.puntos || {}, aciertos: g.aciertos || {}, quesitos: g.quesitos || {} });
+  escucharJugadores();
+  if (g.fase === "lobby") return hostLobby();
+  if (H.pregunta >= NIVELES[H.nivel].preguntas.length) return finNivel();
+  await ponerEstado({ fase: "pausa" });
+  H.fase = "pausa";
+  $app.innerHTML = `<div class="pantalla">${cabeceraPantalla()}<div class="centro">
+    <h2 style="font-size:48px">Partida en pausa</h2>
+    <p style="font-size:24px;color:var(--suave)">Nivel ${H.nivel + 1} · pregunta ${H.pregunta + 1} de ${NIVELES[H.nivel].preguntas.length}</p>
+    <button class="btn color" data-siguiente onclick="lanzarPregunta()">Reanudar</button></div></div>`;
+}
+
+function escucharJugadores() {
+  offJugadores && offJugadores();
+  offJugadores = T.on(`${rutaSala()}/jugadores`, v => {
+    H.jugadores = v || {};
+    if (H.fase === "lobby") pintarJugadoresLobby();
+    if (H.fase === "pregunta") actualizarRespondidas();
+    const et = document.querySelector(".barra .etiqueta"); if (et) et.textContent = `Sala ${H.sala} · ${Object.keys(H.jugadores).length} 👤`;
+  });
+}
+
+function urlJugador() {
+  const base = location.href.split("#")[0].split("?")[0];
+  return `${base}?sala=${H.sala}${T.modo() !== "firebase" ? "&prueba=1" : ""}`;
+}
+
+function hostLobby() {
+  H.fase = "lobby";
+  const url = urlJugador();
+  $app.innerHTML = `<div class="pantalla">${cabeceraPantalla()}
+    <div class="centro">
+      ${avisoModo()}
+      <div class="lobby">
+        <div class="qr-caja"><div style="font-weight:600;font-size:22px">Escanea para jugar</div>
+          <div id="qr"></div><div style="font-size:18px;font-weight:600">Código de sala</div>
+          <div class="codigo">${H.sala}</div><div class="url">${esc(url)}</div></div>
+        <div style="display:flex;flex-direction:column;gap:20px;text-align:left">
+          <div class="contador" id="contador"></div>
+          <div class="jugadores" id="jugadores"></div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button class="btn color" id="btnEmpezar" data-siguiente onclick="empezarNivel(0)">¡Empezar el juego!</button>
+            ${T.modo() !== "firebase" ? `<button class="btn secundario" onclick="window.open('${esc(url)}','_blank')">Abrir un jugador de prueba</button>` : ""}
+          </div>
+        </div>
+      </div>
+    </div></div>`;
+  const caja = document.getElementById("qr");
+  if (!/^https?:$/.test(location.protocol)) {
+    caja.innerHTML = `<p style="padding:30px 14px;font-size:17px;line-height:1.35;text-align:center">El juego está abierto como archivo de tu ordenador, así que un QR no puede llevar a los móviles hasta él.<br><br><b>Publícalo en internet (por ejemplo en Netlify) y abre esa dirección para que aparezca el QR.</b></p>`;
+  } else if (window.QRCode) new QRCode(caja, { text: url, width: 512, height: 512, colorDark: "#1b1446", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+  else caja.innerHTML = `<p style="padding:40px 10px">No se ha podido generar el QR (sin conexión). Usa la dirección de abajo.</p>`;
+  pintarJugadoresLobby();
+}
+
+function pintarJugadoresLobby() {
+  const cont = document.getElementById("jugadores"); if (!cont) return;
+  const ids = Object.keys(H.jugadores);
+  document.getElementById("contador").innerHTML = ids.length ? `${ids.length} ${ids.length === 1 ? "participante conectado" : "participantes conectados"}` : "Esperando participantes…";
+  cont.innerHTML = ids.map(id => `<span class="chip" style="background:${H.jugadores[id].color}">${avatar(H.jugadores[id], 34)}${esc(H.jugadores[id].nombre)}
+    <button class="x" title="Quitar" onclick="quitarJugador('${id}')">✕</button></span>`).join("");
+  const b = document.getElementById("btnEmpezar"); if (b) b.disabled = ids.length === 0;
+}
+function quitarJugador(id) { T.set(`${rutaSala()}/jugadores/${id}`, null); }
+
+async function empezarNivel(n) {
+  H.nivel = n; H.pregunta = 0; H.fase = "nivel";
+  guardarPartida();
+  const nv = NIVELES[n];
+  await ponerEstado({ fase: "nivel", nivel: n, tema: nv.tema, temaNum: nv.temaNum, temaNombre: nv.temaNombre });
+  $app.innerHTML = `<div class="pantalla">${cabeceraPantalla()}
+    <div class="centro intro-nivel">
+      <div class="quesito-grande">${quesitoSVG(NIVELES.length, [], n)}</div>
+      <p>Nivel ${n + 1} de ${NIVELES.length} · Tema ${nv.temaNum}: ${esc(nv.temaNombre)}</p>
+      <h2 style="color:${colorNivel(n)}">${esc(nv.tema)}</h2>
+      <p>${nv.preguntas.length} preguntas · ${H.duracion} segundos cada una</p>
+      <button class="btn color" data-siguiente onclick="lanzarPregunta()">¡Vamos!</button>
+    </div></div>`;
+}
+
+async function lanzarPregunta() {
+  const nv = NIVELES[H.nivel], q = nv.preguntas[H.pregunta];
+  const clave = `n${H.nivel}p${H.pregunta}_${Date.now().toString(36)}`;
+  const inicio = T.ahora();
+  H.actual = { clave, inicio, q, idx: H.pregunta, respuestas: {}, cerrada: false };
+  H.fase = "pregunta";
+  await ponerEstado({
+    fase: "pregunta", nivel: H.nivel, tema: nv.tema, pregunta: H.pregunta, total: nv.preguntas.length,
+    texto: q.texto, opciones: q.opciones, duracion: H.duracion, inicio, clave
+  });
+  $app.innerHTML = `<div class="pantalla">${cabeceraPantalla(`<span class="etiqueta" style="background:${colorNivel(H.nivel)}">Nivel ${H.nivel + 1} · Pregunta ${H.pregunta + 1}/${nv.preguntas.length}</span>`)}
+    <div class="centro">
+      <div class="pregunta-txt">${esc(q.texto)}</div>
+      <div class="zona-tiempo">
+        <div class="reloj" id="reloj"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="10"/>
+          <circle id="arco" cx="50" cy="50" r="44" fill="none" stroke="${colorNivel(H.nivel)}" stroke-width="10" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="0"/></svg>
+          <div class="num" id="segs">${H.duracion}</div></div>
+        <div class="respondidas" id="respondidas"></div>
+        <button class="btn secundario" onclick="cerrarPregunta()">Cerrar ya</button>
+      </div>
+      <div class="opciones">${q.opciones.map((o, i) => `<div class="opcion o${i}"><span class="forma">${FORMAS[i]}</span><span>${esc(o)}</span></div>`).join("")}</div>
+    </div></div>`;
+  actualizarRespondidas();
+  offRespuestas && offRespuestas();
+  offRespuestas = T.on(`${rutaSala()}/respuestas/${clave}`, v => {
+    if (!H.actual || H.actual.clave !== clave || H.actual.cerrada) return;
+    H.actual.respuestas = v || {};
+    actualizarRespondidas();
+    const conectados = Object.keys(H.jugadores);
+    if (conectados.length && conectados.every(id => H.actual.respuestas[id])) setTimeout(() => cerrarPregunta(), 700);
+  });
+  clearInterval(relojId);
+  relojId = setInterval(() => {
+    const quedan = H.duracion - (T.ahora() - inicio) / 1000;
+    const segs = document.getElementById("segs"), arco = document.getElementById("arco"), reloj = document.getElementById("reloj");
+    if (segs) segs.textContent = Math.max(0, Math.ceil(quedan));
+    if (arco) arco.setAttribute("stroke-dashoffset", (276.5 * (1 - Math.max(0, quedan) / H.duracion)).toFixed(1));
+    if (reloj) reloj.classList.toggle("urgente", quedan <= 5);
+    if (quedan <= -0.8) cerrarPregunta(); // pequeño margen para respuestas en camino
+  }, 100);
+}
+
+function actualizarRespondidas() {
+  const el = document.getElementById("respondidas"); if (!el || !H.actual) return;
+  const n = Object.keys(H.actual.respuestas).filter(id => H.jugadores[id]).length;
+  el.innerHTML = `<b>${n}</b> / ${Object.keys(H.jugadores).length} han respondido`;
+}
+
+async function cerrarPregunta() {
+  const A = H.actual; if (!A || A.cerrada) return;
+  A.cerrada = true; clearInterval(relojId); offRespuestas && offRespuestas(); offRespuestas = null;
+  const resp = (await T.get(`${rutaSala()}/respuestas/${A.clave}`)) || A.respuestas || {};
+  const res = {}, votos = A.q.opciones.map(() => 0);
+  Object.keys(H.jugadores).forEach(id => {
+    const r = resp[id]; let pts = 0, opcion = -1;
+    if (r && typeof r.t === "number") {
+      const seg = Math.max(0, (r.t - A.inicio) / 1000);
+      if (seg <= H.duracion + 1) {
+        opcion = r.opcion; if (votos[opcion] !== undefined) votos[opcion]++;
+        if (opcion === A.q.correcta) pts = calcularPuntos(seg, H.duracion);
+      }
+    }
+    if (!H.puntos[id]) H.puntos[id] = []; if (!H.aciertos[id]) H.aciertos[id] = [];
+    H.puntos[id][H.nivel] = ptsNivel(id, H.nivel) + pts;
+    H.aciertos[id][H.nivel] = (H.aciertos[id][H.nivel] || 0) + (pts > 0 ? 1 : 0);
+    res[id] = { o: opcion, p: pts };
+  });
+  H.pregunta = A.idx + 1; H.ultimo = { res, votos }; H.fase = "resultado";
+  guardarPartida();
+  await ponerEstado({ fase: "resultado", nivel: H.nivel, pregunta: A.idx, total: NIVELES[H.nivel].preguntas.length, correcta: A.q.correcta, textoCorrecta: A.q.opciones[A.q.correcta], res, clave: A.clave });
+  T.set(`${rutaSala()}/respuestas/${A.clave}`, null);
+  pintarResultado();
+}
+
+function rankingNivel(n) {
+  return Object.keys(H.jugadores).sort((a, b) => ptsNivel(b, n) - ptsNivel(a, n) || nombre(a).localeCompare(nombre(b)));
+}
+function filaRank(id, pos, pts, extra = "", oro = false) {
+  return `<div class="fila-rank${oro ? " oro" : ""}"><span class="pos">${pos}</span>${avatar(H.jugadores[id], 34)}
+    <span class="nom">${esc(nombre(id))}</span><span class="pts">${pts}${extra}</span></div>`;
+}
+
+function pintarResultado() {
+  const A = H.actual, { res, votos } = H.ultimo, nv = NIVELES[H.nivel];
+  const totalVotos = votos.reduce((a, b) => a + b, 0) || 1;
+  const top = rankingNivel(H.nivel).slice(0, 6);
+  const ultima = H.pregunta >= nv.preguntas.length;
+  $app.innerHTML = `<div class="pantalla">${cabeceraPantalla(`<span class="etiqueta" style="background:${colorNivel(H.nivel)}">Nivel ${H.nivel + 1} · Pregunta ${A.idx + 1}/${nv.preguntas.length}</span>`)}
+    <div class="centro">
+      <div class="pregunta-txt" style="font-size:clamp(22px,2.6vw,40px);padding:20px 28px">${esc(A.q.texto)}</div>
+      <div class="resultado-grid">
+        <div class="opciones">${A.q.opciones.map((o, i) => `<div class="opcion o${i} ${i === A.q.correcta ? "correcta" : "apagada"}">
+          <span class="forma">${i === A.q.correcta ? "✔" : FORMAS[i]}</span><span>${esc(o)}</span><span class="votos">${votos[i]}</span>
+          <span class="barra-votos" style="width:${(votos[i] / totalVotos * 100).toFixed(0)}%"></span></div>`).join("")}</div>
+        <div class="tabla-top"><h3>Clasificación del nivel</h3>
+          ${(() => { let pos = 0, prev = null; const max = top.length ? ptsNivel(top[0], H.nivel) : 0;
+            return top.map((id, i) => { const p = ptsNivel(id, H.nivel); if (p !== prev) { pos = i + 1; prev = p; }
+              return filaRank(id, pos, p, res[id] && res[id].p ? `<span class="mas">+${res[id].p}</span>` : "", p === max && p > 0); }).join(""); })() || `<p style="color:var(--suave)">Sin participantes</p>`}
+        </div>
+      </div>
+      <button class="btn color" data-siguiente onclick="${ultima ? "finNivel()" : "lanzarPregunta()"}">${ultima ? "Ver resultados del nivel" : "Siguiente pregunta"}</button>
+    </div></div>`;
+}
+
+async function finNivel() {
+  const n = H.nivel, orden = rankingNivel(n);
+  const max = orden.length ? ptsNivel(orden[0], n) : 0;
+  const ganadores = max > 0 ? orden.filter(id => ptsNivel(id, n) === max) : [];
+  ganadores.forEach(id => { if (!H.quesitos[id]) H.quesitos[id] = []; if (!H.quesitos[id].includes(n)) H.quesitos[id].push(n); });
+  H.fase = "finNivel"; guardarPartida();
+  const resumen = {}; let pos = 0, prev = null;
+  orden.forEach((id, i) => { const p = ptsNivel(id, n); if (p !== prev) { pos = i + 1; prev = p; } resumen[id] = { pos, p, q: ganadores.includes(id), nq: nQuesitos(id), gan: H.quesitos[id] || [] }; });
+  await ponerEstado({ fase: "finNivel", nivel: n, totalNiveles: NIVELES.length, tema: NIVELES[n].tema, resumen });
+  const ultimo = n >= NIVELES.length - 1;
+  $app.innerHTML = `<div class="pantalla">${cabeceraPantalla()}
+    <div class="centro"><div class="fin-nivel">
+      <h2 style="font-size:clamp(30px,3.6vw,54px)">Fin del nivel ${n + 1}: <span style="color:${colorNivel(n)}">${esc(NIVELES[n].tema)}</span></h2>
+      ${ganadores.length ? `<div style="font-size:24px;color:var(--suave)">${ganadores.length > 1 ? "¡Empate! Se llevan el quesito:" : "Se lleva el quesito:"}</div>
+        <div class="ganadores">${ganadores.map((id, i) => `<div class="ganador" style="animation-delay:${i * .15}s"><div class="q">${quesitoSVG(NIVELES.length, [], n)}</div>
+          ${avatar(H.jugadores[id], 96)}<div class="nom" style="color:${colorJug(id)}">${esc(nombre(id))}</div><div class="pts">${max} puntos</div></div>`).join("")}</div>`
+        : `<div style="font-size:26px">Nadie ha acertado en este nivel: el quesito queda desierto.</div>`}
+      <div class="scroll"><div class="rank-cols">${orden.map(id => filaRank(id, resumen[id].pos, ptsNivel(id, n), "", resumen[id].q)).join("")}</div></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+        <button class="btn secundario" onclick="verMarcador()">Ver marcador acumulado</button>
+        <button class="btn color" data-siguiente onclick="${ultimo ? "finalPartida()" : `empezarNivel(${n + 1})`}">${ultimo ? "Ver resultado final 🏆" : "Siguiente nivel"}</button>
+      </div>
+    </div></div></div>`;
+}
+
+function ordenFinal() {
+  return Object.keys(H.jugadores).sort((a, b) => nQuesitos(b) - nQuesitos(a) || ptsTotal(b) - ptsTotal(a) || nombre(a).localeCompare(nombre(b)));
+}
+function tablaMarcador(hastaNivel) {
+  const orden = ordenFinal();
+  return `<table class="tabla-final"><thead><tr><th>#</th><th>Participante</th>
+    ${NIVELES.slice(0, hastaNivel + 1).map((n, i) => `<th style="color:${colorNivel(i)}">N${i + 1}</th>`).join("")}
+    <th>Total</th><th>Quesitos</th></tr></thead><tbody>
+    ${orden.map((id, i) => `<tr><td>${i + 1}</td><td><span class="celda-jug">${avatar(H.jugadores[id], 32)}${esc(nombre(id))}</span></td>
+      ${NIVELES.slice(0, hastaNivel + 1).map((_, n) => `<td class="${(H.quesitos[id] || []).includes(n) ? "ganado" : ""}" style="${(H.quesitos[id] || []).includes(n) ? `background:${colorNivel(n)}` : ""}">${ptsNivel(id, n)}</td>`).join("")}
+      <td><b>${ptsTotal(id)}</b></td><td class="q-celda">${quesitoSVG(NIVELES.length, H.quesitos[id] || [])} <b>${nQuesitos(id)}</b></td></tr>`).join("")}
+    </tbody></table>`;
+}
+function verMarcador() {
+  const n = H.nivel, ultimo = n >= NIVELES.length - 1;
+  $app.innerHTML = `<div class="pantalla">${cabeceraPantalla()}
+    <div class="centro"><div class="fin-nivel">
+      <h2 style="font-size:clamp(30px,3.4vw,50px)">Marcador tras el nivel ${n + 1}</h2>
+      <div class="scroll" style="max-height:60vh">${tablaMarcador(n)}</div>
+      <button class="btn color" data-siguiente onclick="${ultimo ? "finalPartida()" : `empezarNivel(${n + 1})`}">${ultimo ? "Ver resultado final 🏆" : "Siguiente nivel"}</button>
+    </div></div></div>`;
+}
+
+async function finalPartida() {
+  H.fase = "final";
+  const orden = ordenFinal(), resumen = {};
+  orden.forEach((id, i) => { resumen[id] = { pos: i + 1, nq: nQuesitos(id), gan: H.quesitos[id] || [], t: ptsTotal(id) }; });
+  await ponerEstado({ fase: "final", totalNiveles: NIVELES.length, resumen });
+  try { localStorage.removeItem(GUARDADO); } catch (e) {}
+  const p = orden.slice(0, 3);
+  const peldano = (id, k) => id ? `<div class="peldano p${k}" style="animation-delay:${(3 - k) * .3}s">
+      <div class="q">${quesitoSVG(NIVELES.length, H.quesitos[id] || [])}</div>${avatar(H.jugadores[id], 64)}<div class="nom">${esc(nombre(id))}</div>
+      <div class="det">${nQuesitos(id)} quesito${nQuesitos(id) === 1 ? "" : "s"} · ${ptsTotal(id)} pts</div><div class="bloque">${k}</div></div>` : "";
+  $app.innerHTML = `<div class="pantalla">${cabeceraPantalla()}
+    <div class="centro"><div class="fin-nivel">
+      <h2 style="font-size:clamp(30px,3.4vw,52px)">🏆 Resultado final</h2>
+      <div class="podio">${peldano(p[1], 2)}${peldano(p[0], 1)}${peldano(p[2], 3)}</div>
+      <div class="scroll" style="max-height:30vh">${tablaMarcador(NIVELES.length - 1)}</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+        <button class="btn secundario" onclick="cerrarSala()">Cerrar la sala</button>
+        <button class="btn color" onclick="cerrarSala(true)">Nueva partida</button>
+      </div>
+    </div></div></div>`;
+}
+
+async function cerrarSala(nueva) {
+  offJugadores && offJugadores(); offJugadores = null;
+  await T.set(rutaSala(), null);
+  H.sala = null; H.jugadores = {};
+  if (nueva) return hostInicio();
+  $app.innerHTML = `<div class="pantalla">${cabeceraPantalla()}<div class="centro"><h2 style="font-size:48px">¡Gracias por jugar!</h2>
+    <button class="btn color" onclick="hostInicio()">Volver al inicio</button></div></div>`;
+}
+
+/* =====================================================================
+   VISTA DE MÓVIL (JUGADOR)
+   ===================================================================== */
+const J = { sala: (params.get("sala") || "").toUpperCase(), id: null, nombre: null, color: null, estado: null, respondida: {}, fuera: false };
+let offEstado = null, offYo = null, barraId = null;
+
+function claveLocal() { return `trivialAlmacen_jugador_${J.sala}`; }
+// En modo prueba cada pestaña es un jugador distinto; con móviles, se recuerda aunque se cierre la pestaña.
+const almacen = () => (T.modo() === "firebase" ? localStorage : sessionStorage);
+
+function movil(contenido, clase = "") {
+  const yo = J.id ? `<div class="yo">${avatar(J, 30)}<span>${esc(J.nombre)}</span></div>` : `<div></div>`;
+  $app.innerHTML = `<div class="movil ${clase}"><div class="cabecera">${yo}<span>${J.sala ? "Sala " + esc(J.sala) : ""}</span></div><div class="cuerpo">${contenido}</div></div>`;
+}
+
+async function jugadorInicio() {
+  if (T.modo() === "error") return movil(`<div class="grande">📡</div><h2>No hay conexión con el juego</h2>
+    <p>${esc(explicarError(T.error()))}</p><button class="btn color" onclick="location.reload()">Reintentar</button>`);
+  if (!J.sala) return pedirCodigo();
+  let guardado = null; try { guardado = JSON.parse(almacen().getItem(claveLocal())); } catch (e) {}
+  if (guardado) {
+    const yo = await T.get(`${RAIZ}/${J.sala}/jugadores/${guardado.id}`);
+    if (yo) { Object.assign(J, guardado); return conectar(); }
+  }
+  pedirNombre();
+}
+
+function pedirCodigo(error = "") {
+  movil(`<div style="width:110px;height:110px">${logoSVG()}</div>
+    <h2>${esc(AJUSTES.titulo)}</h2><p>Escribe el código de sala que aparece en la pantalla</p>
+    <div class="entrada"><input id="cod" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD">
+    <div class="error">${esc(error)}</div><button class="btn color" onclick="enviarCodigo()">Entrar</button></div>`);
+  const i = document.getElementById("cod"); i.focus(); i.onkeydown = e => { if (e.key === "Enter") enviarCodigo(); };
+}
+async function enviarCodigo() {
+  const c = document.getElementById("cod").value.trim().toUpperCase(); if (c.length !== 4) return pedirCodigo("El código tiene 4 letras");
+  J.sala = c; const e = await T.get(`${RAIZ}/${c}/estado`);
+  if (!e) { J.sala = ""; return pedirCodigo("No encuentro esa sala. Revisa el código."); }
+  jugadorInicio();
+}
+
+async function pedirNombre(error = "") {
+  const e = await T.get(`${RAIZ}/${J.sala}/estado`);
+  if (!e) { const s = J.sala; J.sala = ""; return pedirCodigo(`La sala ${s} no existe o ya se ha cerrado.`); }
+  movil(`<div style="width:110px;height:110px">${logoSVG()}</div>
+    <h2>${esc(AJUSTES.titulo)}</h2>
+    ${J.fuera ? `<p style="color:#ffcf3a">El profesor ha quitado tu nombre de la partida. Elige otro para volver a entrar.</p>` : `<p>Elige un nombre para ti o para tu equipo</p>`}
+    <div class="entrada"><input id="nom" maxlength="15" autocomplete="off" placeholder="Tu nombre" value="${esc(J.borrador || "")}">
+    ${e.fotos ? `<div class="zona-selfie" id="zonaSelfie"></div>` : ""}
+    <div class="error">${esc(error)}</div><button class="btn color" id="btnUnir" onclick="unirse()">¡Jugar!</button></div>`);
+  J.permiteFoto = !!e.fotos; if (!J.permiteFoto) J.foto = null;
+  pintarSelfie();
+  const i = document.getElementById("nom"); i.focus(); i.onkeydown = ev => { if (ev.key === "Enter") unirse(); };
+}
+
+function pintarSelfie() {
+  const z = document.getElementById("zonaSelfie"); if (!z) return;
+  z.innerHTML = J.foto
+    ? `<img class="avatar" alt="Tu foto" src="${J.foto}" style="width:96px;height:96px;border-color:#fff">
+       <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+         <label class="btn secundario mini">🔄 Repetir<input type="file" accept="image/*" capture="user" hidden onchange="tomarSelfie(this)"></label>
+         <button class="btn secundario mini" onclick="J.foto=null;pintarSelfie()">Quitar</button></div>`
+    : `<label class="btn secundario selfie">📸 Hazte un selfie (opcional)<input type="file" accept="image/*" capture="user" hidden onchange="tomarSelfie(this)"></label>`;
+}
+// Recorta la foto en cuadrado y la reduce a 160×160 px para que pese muy poco.
+function tomarSelfie(input) {
+  const f = input.files && input.files[0]; if (!f) return;
+  const url = URL.createObjectURL(f), img = new Image();
+  img.onload = () => {
+    const lado = Math.min(img.naturalWidth, img.naturalHeight), c = document.createElement("canvas");
+    c.width = c.height = 160;
+    c.getContext("2d").drawImage(img, (img.naturalWidth - lado) / 2, (img.naturalHeight - lado) / 2, lado, lado, 0, 0, 160, 160);
+    URL.revokeObjectURL(url);
+    let datos = c.toDataURL("image/jpeg", 0.72);
+    if (!fotoValida(datos)) datos = c.toDataURL("image/jpeg", 0.5);
+    J.foto = fotoValida(datos) ? datos : null;
+    pintarSelfie();
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); aviso("No se ha podido leer la foto. Prueba otra vez."); };
+  img.src = url;
+}
+
+async function unirse() {
+  const nom = document.getElementById("nom").value.replace(/\s+/g, " ").trim();
+  J.borrador = nom;
+  if (nom.length < 2) return pedirNombre("Escribe al menos 2 letras");
+  document.getElementById("btnUnir").disabled = true;
+  const lista = (await T.get(`${RAIZ}/${J.sala}/jugadores`)) || {};
+  if (Object.values(lista).some(j => j.nombre.toLowerCase() === nom.toLowerCase())) return pedirNombre("Ese nombre ya está cogido, prueba con otro");
+  const usados = Object.values(lista).map(j => j.color);
+  const libres = COLORES_JUG.filter(c => !usados.includes(c));
+  Object.assign(J, { id: nuevoId(), nombre: nom, color: (libres.length ? libres : COLORES_JUG)[Math.floor(Math.random() * (libres.length || COLORES_JUG.length))], fuera: false });
+
+try {
+await T.set(`${RAIZ}/${J.sala}/jugadores/${J.id}`, {
+  nombre: J.nombre,
+  color: J.color,
+  ...(J.permiteFoto && fotoValida(J.foto) ? { foto: J.foto } : {}),
+  entrada: T.sello(),
+  uid: T.modo() === "firebase"
+    ? firebase.auth().currentUser.uid
+    : J.id
+});
+} catch (err) { J.id = null; return pedirNombre(explicarError(err.code || err.message)); }
+  J.borrador = "";
+  try { almacen().setItem(claveLocal(), JSON.stringify({ id: J.id, nombre: J.nombre, color: J.color, foto: J.permiteFoto ? J.foto : null })); } catch (e) {}
+  conectar();
+}
+
+function conectar() {
+  offEstado && offEstado(); offYo && offYo();
+  let visto = false;
+  offYo = T.on(`${RAIZ}/${J.sala}/jugadores/${J.id}`, v => {
+    if (v) { visto = true; return; }
+    if (!visto) return;
+    offEstado && offEstado(); offYo && offYo();
+    try { almacen().removeItem(claveLocal()); } catch (e) {}
+    J.id = null; J.fuera = true; pedirNombre();
+  });
+  offEstado = T.on(`${RAIZ}/${J.sala}/estado`, e => { J.estado = e; if (e && e.colores) COLORES_ACTIVOS = e.colores; pintarMovil(); });
+}
+
+function pintarMovil() {
+  const e = J.estado; clearInterval(barraId);
+  if (!e) { movil(`<div class="grande">👋</div><h2>La partida ha terminado</h2><p>¡Gracias por jugar!</p>`); return; }
+  const totalN = e.totalNiveles || NIVELES.length;
+  switch (e.fase) {
+    case "lobby":
+      return movil(`<div class="grande">🙌</div><h2>¡Ya estás dentro!</h2><p>Mira la pantalla: el juego empezará enseguida.</p>`);
+    case "pausa":
+      return movil(`<div class="grande">⏸️</div><h2>Partida en pausa</h2><p>Espera a que el profesor la reanude.</p>`);
+    case "nivel":
+      return movil(`<div class="quesito-movil">${quesitoSVG(totalN, [], e.nivel)}</div><p>Nivel ${e.nivel + 1} de ${totalN}${e.temaNombre ? ` · Tema ${e.temaNum}` : ""}</p>
+        <h2 style="color:${colorNivel(e.nivel)}">${esc(e.tema)}</h2><p>¡Prepárate!</p>`);
+    case "pregunta": {
+      const quedan = e.duracion - (T.ahora() - e.inicio) / 1000;
+      if (J.respondida[e.clave] !== undefined) {
+        const i = J.respondida[e.clave];
+        return movil(`<div class="grande">${FORMAS[i]}</div><h2>¡Respuesta enviada!</h2><p>Has elegido: <b style="color:#fff">${esc(e.opciones[i])}</b></p><p>Espera a que termine el tiempo…</p>`);
+      }
+      if (quedan <= 0) return movil(`<div class="grande">⏰</div><h2>¡Se acabó el tiempo!</h2>`);
+      movil(`<div style="width:100%;display:flex;flex-direction:column;gap:12px;flex:1">
+        <div style="display:flex;justify-content:space-between;color:var(--suave);font-weight:600"><span>Nivel ${e.nivel + 1} · ${e.pregunta + 1}/${e.total}</span><span id="segMovil"></span></div>
+        <div class="barra-tiempo"><i id="barraMovil" style="background:${colorNivel(e.nivel)}"></i></div>
+        <div class="preg-movil">${esc(e.texto)}</div>
+        <div class="botones ${e.opciones.length === 2 ? "dos" : ""} ${e.opciones.some(o => o.length > 45) ? "largas" : ""}">${e.opciones.map((o, i) => `<button class="resp o${i}" onclick="responder(${i})"><span class="forma">${FORMAS[i]}</span><span>${esc(o)}</span></button>`).join("")}</div>
+      </div>`);
+      document.querySelector(".movil .cuerpo").style.justifyContent = "stretch";
+      const tic = () => {
+        const q = e.duracion - (T.ahora() - e.inicio) / 1000;
+        const b = document.getElementById("barraMovil"), s = document.getElementById("segMovil");
+        if (b) b.style.width = Math.max(0, q / e.duracion * 100) + "%";
+        if (s) s.textContent = Math.max(0, Math.ceil(q)) + " s";
+        if (q <= 0) { clearInterval(barraId); pintarMovil(); }
+      };
+      tic(); barraId = setInterval(tic, 100);
+      return;
+    }
+    case "resultado": {
+      const r = e.res && e.res[J.id];
+      if (!r || r.o === -1) return movil(`<div class="grande">⏰</div><h2>No ha dado tiempo</h2><p>La correcta era:</p><h2 style="font-size:24px">${esc(e.textoCorrecta)}</h2>`, "mal");
+      if (r.p > 0) return movil(`<div class="grande">✅</div><h2>¡Correcto!</h2><div class="puntos">+${r.p}</div><p>${r.p === AJUSTES.puntosMaximos ? "¡Rapidísimo! Puntuación máxima" : "Cuanto más rápido, más puntos"}</p>`, "ok");
+      return movil(`<div class="grande">❌</div><h2>¡Casi!</h2><p style="color:#fff">La correcta era:</p><h2 style="font-size:24px">${esc(e.textoCorrecta)}</h2>`, "mal");
+    }
+    case "finNivel": {
+      const r = e.resumen && e.resumen[J.id];
+      if (!r) return movil(`<h2>Fin del nivel ${e.nivel + 1}</h2><p>Mira la pantalla</p>`);
+      return movil(`<div class="quesito-movil">${quesitoSVG(totalN, r.gan || [])}</div>
+        <h2>${r.q ? "¡Quesito para ti! 🎉" : `Fin del nivel ${e.nivel + 1}`}</h2>
+        <p>Has quedado <b style="color:#fff">${r.pos}.º</b> con <b style="color:#fff">${r.p} puntos</b></p>
+        <p>Llevas ${r.nq} quesito${r.nq === 1 ? "" : "s"} de ${totalN}</p>`);
+    }
+    case "final": {
+      const r = e.resumen && e.resumen[J.id];
+      if (!r) return movil(`<h2>¡Fin del juego!</h2><p>Mira la pantalla</p>`);
+      const medalla = ["🥇", "🥈", "🥉"][r.pos - 1] || "🏁";
+      return movil(`<div class="grande">${medalla}</div><h2>Puesto ${r.pos}.º</h2>
+        <div class="quesito-movil">${quesitoSVG(totalN, r.gan || [])}</div>
+        <p><b style="color:#fff">${r.nq}</b> quesito${r.nq === 1 ? "" : "s"} · <b style="color:#fff">${r.t}</b> puntos en total</p>`);
+    }
+  }
+}
+
+async function responder(i) {
+  const e = J.estado; if (!e || e.fase !== "pregunta" || J.respondida[e.clave] !== undefined) return;
+  J.respondida[e.clave] = i;
+  if (navigator.vibrate) navigator.vibrate(40);
+  pintarMovil();
+  await T.set(`${RAIZ}/${J.sala}/respuestas/${e.clave}/${J.id}`, { opcion: i, t: T.sello() });
+}
+
+/* =====================================================================
+   ARRANQUE
+   ===================================================================== */
+(async () => {
+  await T.iniciar();
+  const esJugador = params.has("sala") || params.has("jugar");
+  if (esJugador) jugadorInicio(); else hostInicio();
+})();
+</script>
+</body>
+</html>
