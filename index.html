@@ -452,7 +452,13 @@ async function crearSala() {
   leerDuracion();
   T.limpiarPrueba();
   Object.assign(H, { sala: codigoSala(), jugadores: {}, nivel: 0, pregunta: 0, puntos: {}, aciertos: {}, quesitos: {}, actual: null, ultimo: null });
-  await T.set(rutaSala(), { estado: { fase: "lobby", creada: T.ahora() } });
+  
+await T.set(rutaSala(), {
+  ...(T.modo() === "firebase"
+    ? { hostUid: firebase.auth().currentUser.uid }
+    : {}),
+  estado: { fase: "lobby", creada: T.ahora() }
+});
   escucharJugadores();
   guardarPartida();
   hostLobby();
@@ -782,7 +788,15 @@ async function unirse() {
   const usados = Object.values(lista).map(j => j.color);
   const libres = COLORES_JUG.filter(c => !usados.includes(c));
   Object.assign(J, { id: nuevoId(), nombre: nom, color: (libres.length ? libres : COLORES_JUG)[Math.floor(Math.random() * (libres.length || COLORES_JUG.length))], fuera: false });
-  await T.set(`${RAIZ}/${J.sala}/jugadores/${J.id}`, { nombre: J.nombre, color: J.color, entrada: T.sello() });
+
+await T.set(`${RAIZ}/${J.sala}/jugadores/${J.id}`, {
+  nombre: J.nombre,
+  color: J.color,
+  entrada: T.sello(),
+  uid: T.modo() === "firebase"
+    ? firebase.auth().currentUser.uid
+    : J.id
+});
   try { almacen().setItem(claveLocal(), JSON.stringify({ id: J.id, nombre: J.nombre, color: J.color })); } catch (e) {}
   conectar();
 }
